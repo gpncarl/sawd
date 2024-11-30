@@ -1,6 +1,6 @@
 #pragma once
 
-#include <uvw.hpp>
+#include <uv.h>
 #include <stdexec/execution.hpp>
 
 namespace sawd {
@@ -15,22 +15,27 @@ public:
 
       template <typename R>
       struct operation {
-        auto start() noexcept -> void {
-          auto async = ctx.loop_->resource<uvw::async_handle>();
-          async->on<uvw::async_event>([this] (const uvw::async_event&, uvw::async_handle& handle) {
-            stdexec::set_value(static_cast<R&&>(r));
-            handle.close();
-          });
-          async->send();
+        ~operation() {
+          uv_close(reinterpret_cast<uv_handle_t*>(&handle), nullptr);
         }
 
-        io_context& ctx;
+        auto start() noexcept -> void {
+          uv_async_init(loop, &handle, +[](uv_async_t* h) {
+              auto thiz = static_cast<operation*>(h->data);
+              stdexec::set_value(static_cast<R&&>(thiz->r));
+          });
+          handle.data = this;
+          uv_async_send(&handle);
+        }
+
+        uv_async_t handle;
+        uv_loop_t* loop;
         R r;
       };
 
       template <typename R>
       friend auto tag_invoke(stdexec::connect_t, const schedule_sender& self, R r) -> operation<R> {
-        return operation<R>{self.ctx, static_cast<R&&>(r)};
+        return operation<R>{{}, self.ctx, static_cast<R&&>(r)};
       }
 
       io_context& ctx;
@@ -47,14 +52,27 @@ public:
   };
 
   auto run() -> int {
-    return loop_->run();
+    return uv_run(&loop_, UV_RUN_DEFAULT);
   }
 
   auto get_scheduler() -> scheduler {
     return scheduler{*this};
   }
 
-  std::shared_ptr<uvw::loop> loop_{uvw::loop::get_default()};
+  io_context() {
+    uv_loop_init(&loop_);
+  }
+
+  ~io_context() {
+    uv_loop_close(&loop_);
+  }
+
+  uv_loop_t* loop() {
+    return &loop_;
+  }
+
+private:
+  uv_loop_t loop_;
 };
 
 } // namespace sawd

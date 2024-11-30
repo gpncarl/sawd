@@ -3,7 +3,6 @@
 #include <exec/finally.hpp>
 #include <fmt/format.h>
 #include "io_context.hpp"
-#include <uvw.hpp>
 #include <exec/async_scope.hpp>
 #include <exec/start_now.hpp>
 #include <exec/task.hpp>
@@ -15,16 +14,16 @@ auto test() -> void
 {
   io_context ctx;
   exec::async_scope scope;
-  // auto snd = ctx.get_scheduler().schedule()
-  //   | stdexec::then([] { return 43; })
-  //   | stdexec::then([](int x) { return x * x; })
-  //   | stdexec::then([](int x) { fmt::println("{}", x); });
+  auto snd = ctx.get_scheduler().schedule()
+    | stdexec::then([] { return 43; })
+    | stdexec::then([](int x) { return x * x; })
+    | stdexec::then([](int x) { fmt::println("{}", x); });
 
-  // scope.spawn(std::move(snd));
-  scope.spawn([&]() -> exec::task<void> {
-    co_await ctx.get_scheduler().schedule();
-    fmt::println("{}", 1234);
-  }());
+  scope.spawn(std::move(snd));
+  // scope.spawn([&]() -> exec::task<void> {
+  //   co_await ctx.get_scheduler().schedule();
+  //   fmt::println("{}", 1234);
+  // }());
   ctx.run();
   stdexec::sync_wait(scope.on_empty());
   // using __receiver_t = stdexec::__t<exec::__start_now_::__receiver<stdexec::__root_env>>;
