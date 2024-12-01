@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 include(cmake/prelude.cmake)
 
 find_program(SCCACHE_PROGRAM sccache)
@@ -20,6 +20,8 @@ project(
     HOMEPAGE_URL "https://example.com/"
     LANGUAGES CXX
 )
+# add_compile_options(-fsanitize=leak)
+# add_link_options(-fsanitize=leak)
 
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
@@ -39,12 +41,13 @@ target_include_directories(
 
 target_compile_features(sawd_lib PUBLIC cxx_std_20)
 # target_compile_options(sawd_lib PRIVATE -Wno-unused-command-line-argument)
+# target_compile_options(sawd_lib PRIVATE -fpermissive)
 
 find_package(fmt REQUIRED)
-target_link_libraries(sawd_lib PRIVATE fmt::fmt)
+target_link_libraries(sawd_lib PUBLIC fmt::fmt)
 
 find_package(stdexec CONFIG REQUIRED)
-target_link_libraries(sawd_lib PRIVATE STDEXEC::stdexec)
+target_link_libraries(sawd_lib PUBLIC STDEXEC::stdexec)
 
 # target_compile_definitions(sawd_lib PUBLIC UVW_BUILD_LIBS)
 # find_package(uvw CONFIG REQUIRED)

@@ -1,19 +1,13 @@
 # sawd
 
-This is the sawd project.
+Sender wrapper for libuv
+toy project for learning sender/receiver
 
 # Building and installing
 
-See the [BUILDING](BUILDING.md) document.
+For a list of dependencies, please refer to [vcpkg.json](vcpkg.json).
 
-# Contributing
-
-See the [CONTRIBUTING](CONTRIBUTING.md) document.
-
-# Licensing
-
-<!--
-Please go to https://choosealicense.com/licenses/ and choose a license that
-fits your needs. The recommended license for a project of this type is the
-GNU AGPLv3.
--->
+```sh
+cmake --preset dev # install dependencies automatically(make sure vcpkg is installed)
+cmake --build --preset dev
+```
