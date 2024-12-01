@@ -1,5 +1,7 @@
 #include "lib.hpp"
 
+#include <memory>
+#include <string_view>
 #include <exec/async_scope.hpp>
 #include <exec/create.hpp>
 #include <exec/finally.hpp>
@@ -17,7 +19,7 @@ auto echo(std::unique_ptr<tcp::socket> sock) -> exec::task<void>
   auto read_sender = sock->read();
   for (;;) {
     auto [buf, nread] = co_await read_sender;
-    auto data = std::string {buf.get(), nread};
+    auto data = std::string_view {buf.get(), nread};
     fmt::print("{}: read {}", (void*)sock.get(), data);
     co_await sock->write({buf.get(), nread});
     fmt::print("{}: write {}", (void*)sock.get(), data);

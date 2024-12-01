@@ -1,5 +1,7 @@
 #pragma once
 #include <span>
+#include <memory>
+#include <string>
 
 #include "io_context.hpp"
 #include "uv.h"
@@ -97,7 +99,7 @@ struct socket_sender
 using accept_sender =
     socket_sender<accept_operation,
                   stdexec::set_value_t(std::unique_ptr<socket>)>;
-using connect_sender = socket_sender<connect_operation>;
+using connect_sender = socket_sender<connect_operation, stdexec::set_value_t()>;
 
 struct write_sender
 {
