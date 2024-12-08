@@ -20,6 +20,7 @@ project(
     HOMEPAGE_URL "https://example.com/"
     LANGUAGES CXX
 )
+add_compile_options(-ftemplate-backtrace-limit=0)
 # add_compile_options(-fsanitize=leak)
 # add_link_options(-fsanitize=leak)
 

@@ -27,7 +27,7 @@ public:
 
         auto start() noexcept -> void
         {
-          uv_async_init(loop,
+          uv_async_init(ctx.loop(),
                         &handle,
                         [](uv_async_t* h)
                         {
@@ -39,32 +39,65 @@ public:
         }
 
         R r;
-        uv_loop_t* loop;
+        io_context& ctx;
         uv_async_t handle;
       };
+
+      struct env
+      {
+        io_context& ctx;
+
+        template<class CPO>
+        auto query(stdexec::get_completion_scheduler_t<CPO>) const noexcept -> scheduler
+        {
+          return ctx.get_scheduler();
+        }
+      };
+
+      auto get_env() const noexcept -> env { return {ctx}; }
 
       template<typename R>
       friend auto tag_invoke(stdexec::connect_t,
                              const schedule_sender& self,
                              R r) -> operation<R>
       {
-        return operation<R> {static_cast<R&&>(r), self.ctx.loop()};
+        return {static_cast<R&&>(r), self.ctx};
       }
 
       io_context& ctx;
     };
 
-    // struct
-
-    static_assert(stdexec::sender<schedule_sender>);
-    auto schedule() -> schedule_sender { return schedule_sender {ctx}; }
-
+    auto operator==(const scheduler& other) const noexcept -> bool
+    {
+      return &ctx == &other.ctx;
+    }
+    auto schedule() const noexcept -> schedule_sender
+    {
+      return {ctx};
+    }
     io_context& ctx;
   };
 
+
+  static_assert(
+      stdexec::tag_invocable<stdexec::get_env_t,
+                             decltype(std::declval<scheduler>().schedule())>);
+  static_assert(stdexec::scheduler<scheduler>);
+  static_assert(stdexec::sender<scheduler::schedule_sender>);
+  static_assert(
+    requires {
+    {
+      stdexec::tag_invoke(stdexec::__detail::_GetComplSched(), std::declval<scheduler::schedule_sender::env>())
+    } -> stdexec::same_as<stdexec::__decay_t<scheduler>>;
+   });
+  static_assert(stdexec::__has_schedule<scheduler>  //
+                && stdexec::__sender_has_completion_scheduler<scheduler> //
+                && stdexec::equality_comparable<stdexec::__decay_t<scheduler>>  //
+                && stdexec::copy_constructible<stdexec::__decay_t<scheduler>>);
+
   auto run() -> int { return uv_run(&loop_, UV_RUN_DEFAULT); }
 
-  auto get_scheduler() -> scheduler { return scheduler {*this}; }
+  auto get_scheduler() noexcept -> scheduler { return {*this}; }
 
   io_context() { uv_loop_init(&loop_); }
 
